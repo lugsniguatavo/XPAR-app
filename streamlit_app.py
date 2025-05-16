@@ -4,18 +4,18 @@ import pandas as pd
 
 st.set_page_config(page_title="XPAR Predictor", layout="wide")
 st.title("XPAR Predictor – Pareggi più probabili del giorno")
-st.markdown("Analisi automatica da Serie A, Serie B, Ligue 2, Segunda División – con aggiornamento via Dropbox.")
+st.markdown("Analisi automatica da Serie A, Serie B, Ligue 2, Segunda División – aggiornati da Dropbox.")
 
 # Funzione per calcolo dello score
 def calcola_x_power(pct):
     return min(round((pct / 40) * 100, 1), 100)
 
-# Link Dropbox diretti ai file CSV – da aggiornare con link reali diretti (dl=1)
+# Link diretti ai file CSV su Dropbox
 links = {
-    "Serie A": "https://www.dropbox.com/scl/fi/XXX/serie_a.csv?rlkey=XXX&dl=1",
-    "Serie B": "https://www.dropbox.com/scl/fi/XXX/serie_b.csv?rlkey=XXX&dl=1",
-    "Ligue 2": "https://www.dropbox.com/scl/fi/XXX/ligue2.csv?rlkey=XXX&dl=1",
-    "Segunda División": "https://www.dropbox.com/scl/fi/XXX/segunda.csv?rlkey=XXX&dl=1"
+    "Serie A": "https://www.dropbox.com/scl/fi/cfm3bk521wdp27xqeboa9/I1.csv?rlkey=hipeecyilhnuqzp2kpvfk6slb&st=ks5du2uu&dl=1",
+    "Serie B": "https://www.dropbox.com/scl/fi/ubszxmlq1fws2bd4ian11/I2.csv?rlkey=y4y8vqd0uacqjdix0chqnpue0&st=ssqs9slg&dl=1",
+    "Ligue 2": "https://www.dropbox.com/scl/fi/1vw6ym83mnnd2osukid9x/F2.csv?rlkey=z0wgn8s208kn1ktuv13du7ys6&st=7q7dwd30&dl=1",
+    "Segunda División": "https://www.dropbox.com/scl/fi/73zanp3vezwos4v7jr5za/SP2.csv?rlkey=10ahw0835njw3bcpxxx6lgyv3&st=byhjeu7l&dl=1"
 }
 
 risultati = []
