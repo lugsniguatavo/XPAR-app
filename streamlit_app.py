@@ -4,13 +4,12 @@ import pandas as pd
 
 st.set_page_config(page_title="XPAR Predictor", layout="wide")
 st.title("XPAR Predictor – Pareggi più probabili del giorno")
-st.markdown("Analisi automatica da Serie A, Serie B, Ligue 2, Segunda División – aggiornati da Dropbox.")
+st.markdown("Dati reali aggiornati da Dropbox – Serie A, Serie B, Ligue 2, Segunda División")
 
-# Funzione per calcolo dello score
 def calcola_x_power(pct):
     return min(round((pct / 40) * 100, 1), 100)
 
-# Link diretti ai file CSV su Dropbox
+# Link aggiornati dei file Dropbox (.csv)
 links = {
     "Serie A": "https://www.dropbox.com/scl/fi/cfm3bk521wdp27xqeboa9/I1.csv?rlkey=hipeecyilhnuqzp2kpvfk6slb&st=ks5du2uu&dl=1",
     "Serie B": "https://www.dropbox.com/scl/fi/ubszxmlq1fws2bd4ian11/I2.csv?rlkey=y4y8vqd0uacqjdix0chqnpue0&st=ssqs9slg&dl=1",
@@ -24,41 +23,44 @@ for campionato, url in links.items():
     try:
         df = pd.read_csv(url)
         df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
-        squadre = pd.unique(df[['HomeTeam', 'AwayTeam']].values.ravel())
-        for squadra in squadre:
-            partite = df[(df['HomeTeam'] == squadra) | (df['AwayTeam'] == squadra)].sort_values(by='Date', ascending=False).head(10)
-            pareggi = partite[partite['FTR'] == 'D'].shape[0]
-            pct = (pareggi / 10) * 100
-            score = calcola_x_power(pct)
-            risultati.append({
-                'Campionato': campionato,
-                'Squadra': squadra,
-                'Pareggi_ultime_10': pareggi,
-                'Percentuale_Pareggi': pct,
-                'X_Power_Score': score
-            })
-    except Exception as e:
-        st.warning(f"Errore nel caricamento del campionato {campionato}: {e}")
+        df = df.dropna(subset=['Date', 'HomeTeam', 'AwayTeam', 'FTR'])
 
-# Crea DataFrame completo
+        squadre = pd.unique(df[['HomeTeam', 'AwayTeam']].values.ravel())
+
+        for squadra in squadre:
+            partite = df[(df['HomeTeam'] == squadra) | (df['AwayTeam'] == squadra)]
+            partite = partite.sort_values(by='Date', ascending=False).head(10)
+
+            if not partite.empty:
+                pareggi = partite[partite['FTR'] == 'D'].shape[0]
+                pct = (pareggi / len(partite)) * 100
+                score = calcola_x_power(pct)
+                risultati.append({
+                    'Campionato': campionato,
+                    'Squadra': squadra,
+                    'Pareggi_ultime_10': pareggi,
+                    'Percentuale_Pareggi': round(pct, 1),
+                    'X_Power_Score': score
+                })
+    except Exception as e:
+        st.error(f"Errore nel campionato {campionato}: {e}")
+
 df_all = pd.DataFrame(risultati)
 
-# Simuliamo match combinando squadre a caso per mostrare esempio
 partite = []
-gruppi = df_all.groupby("Campionato")
-for campionato, gruppo in gruppi:
-    squadre_ordinate = gruppo.sort_values(by="X_Power_Score", ascending=False).head(8)
-    for i in range(0, len(squadre_ordinate)-1, 2):
-        casa = squadre_ordinate.iloc[i]
-        trasferta = squadre_ordinate.iloc[i+1]
-        media = (casa['X_Power_Score'] + trasferta['X_Power_Score']) / 2
+for campionato, gruppo in df_all.groupby("Campionato"):
+    gruppo = gruppo.sort_values(by="X_Power_Score", ascending=False).head(8)
+    for i in range(0, len(gruppo) - 1, 2):
+        casa = gruppo.iloc[i]
+        trasferta = gruppo.iloc[i + 1]
+        media = round((casa["X_Power_Score"] + trasferta["X_Power_Score"]) / 2, 1)
         partite.append({
             "Campionato": campionato,
             "Casa": casa["Squadra"],
             "Trasferta": trasferta["Squadra"],
             "X_Power_Casa": casa["X_Power_Score"],
             "X_Power_Trasferta": trasferta["X_Power_Score"],
-            "X_Match_Score": round(media, 1)
+            "X_Match_Score": media
         })
 
 df_partite = pd.DataFrame(partite)
