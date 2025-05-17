@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 import json
 
-st.set_page_config(page_title="XPAR Predictor – Diagnostica", layout="wide")
+st.set_page_config(page_title="XPAR Predictor – Finale", layout="wide")
 st.title("XPAR Predictor – I 4 Pareggi Più Probabili di oggi (17/05/2025)")
 
 def calcola_x_power(pct):
@@ -42,12 +42,10 @@ for nome, link in csv_links.items():
     except Exception as e:
         st.error(f"Errore caricando {nome}: {e}")
 
-# Data oggi in formato ISO
 oggi_iso = pd.Timestamp.today().strftime("%Y-%m-%d")
-
 match_list = []
 
-# Per ogni campionato, scarico le partite in programma oggi e calcolo X-Power
+# Ciclo sui match del giorno
 for nome, code in competitions.items():
     url = f"https://api.football-data.org/v4/competitions/{code}/matches?dateFrom={oggi_iso}&dateTo={oggi_iso}"
     try:
@@ -56,7 +54,6 @@ for nome, code in competitions.items():
         for match in data.get("matches", []):
             casa_api = match["homeTeam"]["name"]
             trasferta_api = match["awayTeam"]["name"]
-
             casa = normalizza(casa_api)
             trasferta = normalizza(trasferta_api)
 
@@ -67,7 +64,7 @@ for nome, code in competitions.items():
             partite_casa = df[(df["HomeTeam"] == casa) | (df["AwayTeam"] == casa)].sort_values(by="Date", ascending=False).head(15)
             partite_trasferta = df[(df["HomeTeam"] == trasferta) | (df["AwayTeam"] == trasferta)].sort_values(by="Date", ascending=False).head(15)
 
-            x_casa, x_trasferta = None, None
+            x_casa = x_trasferta = None
             if len(partite_casa) >= 5:
                 pareggi = partite_casa[partite_casa["FTR"] == "D"].shape[0]
                 x_casa = calcola_x_power((pareggi / len(partite_casa)) * 100)
@@ -75,27 +72,24 @@ for nome, code in competitions.items():
                 pareggi = partite_trasferta[partite_trasferta["FTR"] == "D"].shape[0]
                 x_trasferta = calcola_x_power((pareggi / len(partite_trasferta)) * 100)
 
-            media_score = None
             if x_casa is not None and x_trasferta is not None:
                 media_score = round((x_casa + x_trasferta) / 2, 1)
-
-            match_list.append({
-                "Campionato": nome,
-                "Casa (API)": casa_api,
-                "Trasferta (API)": trasferta_api,
-                "Casa (CSV)": casa,
-                "Trasferta (CSV)": trasferta,
-                "X_Power Casa": x_casa,
-                "X_Power Trasferta": x_trasferta,
-                "X_Match_Score": media_score
-            })
+                match_list.append({
+                    "Campionato": nome,
+                    "Casa": casa,
+                    "Trasferta": trasferta,
+                    "X_Power Casa": x_casa,
+                    "X_Power Trasferta": x_trasferta,
+                    "X_Match_Score": media_score
+                })
     except Exception as e:
         st.error(f"Errore API {nome}: {e}")
 
-df_diagnosi = pd.DataFrame(match_list)
+df_match = pd.DataFrame(match_list)
 
-if df_diagnosi.empty:
-    st.warning("Oggi non ci sono partite con dati XPAR calcolabili.")
+if df_match.empty:
+    st.warning("Oggi non ci sono partite con dati sufficienti per il calcolo XPAR.")
 else:
-    st.subheader("Diagnosi completa: partite, XPower e media calcolata")
-    st.dataframe(df_diagnosi.sort_values(by="X_Match_Score", ascending=False))
+    top4 = df_match.sort_values(by="X_Match_Score", ascending=False).head(4)
+    st.subheader("Le 4 Partite più da pareggio")
+    st.dataframe(top4)
