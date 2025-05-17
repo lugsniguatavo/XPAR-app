@@ -75,7 +75,10 @@ for nome, code in competitions.items():
         st.error("Errore API " + nome + ": " + str(e))
 
 df_match = pd.DataFrame(match_list)
-top4 = df_match.sort_values(by="X_Match_Score", ascending=False).head(4)
 
-st.subheader("Le 4 Partite più da pareggio")
-st.dataframe(top4)
+if df_match.empty:
+    st.warning("Oggi non ci sono partite con dati sufficienti per il calcolo XPAR.")
+else:
+    top4 = df_match.sort_values(by="X_Match_Score", ascending=False).head(4)
+    st.subheader("Le 4 Partite più da pareggio")
+    st.dataframe(top4)
